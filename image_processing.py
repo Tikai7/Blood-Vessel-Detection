@@ -36,15 +36,15 @@ class Processing():
         hematoxylin, eosin = self._color_decovolution(image_patch)
         h_enhanced, e_enhanced = self._image_enhancement(hematoxylin, eosin)
         vessel_mask = self._get_vessel_mask(h_enhanced) if use_hematoxylin else self._get_vessel_mask(e_enhanced)
-        vessel_mask_cleaned = self._get_vessel_mask_cleaned(vessel_mask, min_size=min_size)
+        vessel_mask_cleaned = self._get_vessel_mask_cleaned(vessel_mask, min_size=min_size) 
         num_vessels = self._count_vessels(vessel_mask_cleaned) if get_vessel_count else None
 
-        return h_enhanced, e_enhanced, num_vessels
+        return h_enhanced, e_enhanced, vessel_mask_cleaned, num_vessels
     
     def _color_decovolution(self, image_patch):
-        """ 
-            Color decovolution is used to separate the image into hematoxylin and eosin components.
-            :params: image patch
+        """
+            This function is used to separate the image patch into hematoxylin and eosin components.
+            :params: image patch.
             :return: hematoxylin and eosin components of the image patch.
         """
         ihc_hed = color.rgb2hed(image_patch)
@@ -93,7 +93,16 @@ class Processing():
         self.label_image = measure.label(vessel_mask_cleaned)
         self.num_vessels = measure.regionprops(self.label_image)
         self.num_vessels = len(self.num_vessels)
-        return self.num_vessels 
+        return self.num_vessels
+     
+    def to_patch(image_patch):
+        """
+            This function is used to convert the image patch to a patch of size 512x512.
+            :params: image patch.
+            :return: image patch of size 512x512.
+        """
+        image_patch = image_patch[5000:5000+1024, 7000:7000+1024]
+        return image_patch
     
     def visualize_results(self):
         """
