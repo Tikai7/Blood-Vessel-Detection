@@ -1,5 +1,6 @@
+import numpy as np
 import matplotlib.pyplot as plt
-from skimage import color, exposure,filters,morphology,measure
+from skimage import color, exposure,morphology,measure
 
 class Processing():
     """
@@ -13,6 +14,8 @@ class Processing():
     """
 
     def __init__(self) -> None:
+        self.dim = None
+        self.patch = None
         self.hematoxylin = None
         self.eosin = None
         self.h_enhanced = None
@@ -33,6 +36,8 @@ class Processing():
             - min_size: minimum size of the object to be retained.
             :return: enhanced hematoxylin and eosin components of the image patch, and optionally the number of vessels in the image patch.
         """
+        self.patch = image_patch
+        self.dim = image_patch.shape
         hematoxylin, eosin = self._color_decovolution(image_patch)
         h_enhanced, e_enhanced = self._image_enhancement(hematoxylin, eosin)
         vessel_mask = self._get_vessel_mask(h_enhanced) if use_hematoxylin else self._get_vessel_mask(e_enhanced)
@@ -70,7 +75,7 @@ class Processing():
             :params: enhanced hematoxylin component of the image patch.
             :return: vessel mask.
         """
-        self.threshold_value = filters.threshold_otsu(blood_channel)
+        self.threshold_value = np.min(blood_channel)
         self.vessel_mask = blood_channel > self.threshold_value
         return self.vessel_mask
     
@@ -82,6 +87,9 @@ class Processing():
         """
         self.vessel_mask_cleaned = morphology.remove_small_objects(vessel_mask, min_size=min_size)
         self.vessel_mask_cleaned = morphology.binary_closing(self.vessel_mask_cleaned)
+        self.vessel_mask_cleaned = np.invert(self.vessel_mask_cleaned.astype(int)) + 2
+        self.vessel_mask_cleaned = np.stack((self.vessel_mask_cleaned,)*self.dim[-1], axis=-1)
+
         return self.vessel_mask_cleaned
     
     def _count_vessels(self, vessel_mask_cleaned):
@@ -95,19 +103,13 @@ class Processing():
         self.num_vessels = len(self.num_vessels)
         return self.num_vessels
      
-    def to_patch(image_patch):
-        """
-            This function is used to convert the image patch to a patch of size 512x512.
-            :params: image patch.
-            :return: image patch of size 512x512.
-        """
-        image_patch = image_patch[5000:5000+1024, 7000:7000+1024]
-        return image_patch
     
     def visualize_results(self):
         """
             This function is used to visualize the results.
         """
+        image_masked = self.patch * self.vessel_mask_cleaned
+
         plt.figure(figsize=(12, 6))
 
         plt.subplot(231)
@@ -127,7 +129,7 @@ class Processing():
         plt.title('Enhanced Eosin')
 
         plt.subplot(235)
-        plt.imshow(self.vessel_mask_cleaned, cmap='binary')
+        plt.imshow(image_masked, cmap='gray')
         plt.title('Vessel Mask (Hematoxylin)')
 
         plt.show()
