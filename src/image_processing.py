@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage import color, exposure,morphology,measure
-
+from skimage import color, exposure,morphology
 class Processing():
     """
         This class is used to process the image patches of H&E images.
@@ -23,11 +22,10 @@ class Processing():
         self.vessel_mask = None
         self.vessel_mask_cleaned = None
         self.label_image = None
-        self.num_vessels = None
         self.threshold_value = None
         
     
-    def process_patch(self, image_patch, use_hematoxylin=True, min_size=100, get_vessel_count=True):
+    def process_patch(self, image_patch, use_hematoxylin=True, min_size=100):
         """
             This function is used to process the image patch.
             :params: image patch, use_hematoxylin, min_size, get_vessel_count
@@ -42,9 +40,8 @@ class Processing():
         h_enhanced, e_enhanced = self._image_enhancement(hematoxylin, eosin)
         vessel_mask = self._get_vessel_mask(h_enhanced) if use_hematoxylin else self._get_vessel_mask(e_enhanced)
         vessel_mask_cleaned = self._get_vessel_mask_cleaned(vessel_mask, min_size=min_size) 
-        num_vessels = self._count_vessels(vessel_mask_cleaned) if get_vessel_count else None
 
-        return h_enhanced, e_enhanced, vessel_mask_cleaned, num_vessels
+        return h_enhanced, e_enhanced, vessel_mask_cleaned
     
     def _color_decovolution(self, image_patch):
         """
@@ -91,18 +88,6 @@ class Processing():
         self.vessel_mask_cleaned = np.stack((self.vessel_mask_cleaned,)*self.dim[-1], axis=-1)
 
         return self.vessel_mask_cleaned
-    
-    def _count_vessels(self, vessel_mask_cleaned):
-        """
-            This function is used to count the number of vessels in the image patch.
-            :params: cleaned vessel mask.
-            :return: number of vessels.
-        """
-        self.label_image = measure.label(vessel_mask_cleaned)
-        self.num_vessels = measure.regionprops(self.label_image)
-        self.num_vessels = len(self.num_vessels)
-        return self.num_vessels
-     
     
     def visualize_results(self):
         """
