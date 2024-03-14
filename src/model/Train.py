@@ -1,4 +1,5 @@
 import torch
+import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 class Trainer:
@@ -14,11 +15,7 @@ class Trainer:
         self.loss_fn : torch.nn.Module = None
         self.optimizer : torch.optim.Optimizer = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self._OPT_LIST = {
-            "adam": torch.optim.Adam,
-            "sgd": torch.optim.SGD,
-            "adamW" : torch.optim.AdamW
-        }
+
 
     def set_optimizer(self, optimizer : str):
         """Method to set the optimizer for the model.
@@ -50,36 +47,56 @@ class Trainer:
         self.loss_fn = loss_fn
         return self
     
+    def plot_loss(self, train_loss : list, val_loss : list):
+        """Method to plot the training and validation loss.
+        @param train_loss : list, The list of training losses.
+        @param val_loss : list, The list of validation losses.
+        """
+        plt.style.use('ggplot')
+        plt.plot(train_loss, label='train loss')
+        plt.plot(val_loss, label='val loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.show()
 
-    def fit(self, learning_rate : float = 1e-4, epochs : int = 100):
+    def fit(self, learning_rate = 1e-4, epochs : int = 100):
         """Method to train the model.
         @param learning_rate : float, The learning rate for the optimizer.
         @param epochs : int, The number of epochs for training the model.
         """
-        
+        print(f"Training the model on {self.device}...")
+        self.model.to(self.device)
+        self.optimizer = self.optimizer(self.model.parameters(), lr=learning_rate)
         val_loss, train_loss = [], []
-        self.model = self.model.to(self.device)
-        
         for epoch in range(epochs):
-            print(f"Epoch {epoch+1}/{epochs}")
             # Training
-            for batch_x, batch_y in self.train_loader:
+            for i, (batch_x, batch_y) in enumerate(self.train_loader):
+                print(f"Batch [{i+1}/{len(self.train_loader)}]")
                 batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
-                self.optimizer.zero_grad()
                 y_pred = self.model(batch_x)
+                y_pred = torch.sigmoid(y_pred)
+                self.optimizer.zero_grad()
                 loss = self.loss_fn(y_pred, batch_y)
                 loss.backward()
                 loss_item = loss.item()
                 train_loss.append(loss_item )
                 self.optimizer.step()
             # Validation
-            for batch_x, batch_y in self.val_loader:
-                batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
-                with torch.no_grad():
+            print("Validating...")
+            with torch.no_grad():
+                val_epoch_loss = 0
+                for batch_x, batch_y in self.val_loader:
+                    batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
                     y_pred = self.model(batch_x)
+                    y_pred = torch.sigmoid(y_pred)
                     val_loss = self.loss_fn(y_pred, batch_y)
-                    val_loss.append(val_loss.item())
+                    val_epoch_loss += val_loss.item()
+                val_loss.append(val_epoch_loss / len(self.val_loader))
+            
+            print(f"Epoch [{epoch+1}/{epochs}], Training Loss: {train_loss[-1]}, Validation Loss: {val_loss[-1]}")
 
+        print("Training complete.")
         return train_loss, val_loss
     
 

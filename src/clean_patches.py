@@ -1,7 +1,8 @@
 import cv2
-from src.image_processing import Processing
+from src.image_processing import Processing 
 import os 
 import matplotlib.pyplot as plt
+import numpy as np 
 
 class PatchCleaner():
     def __init__(self) -> None:
@@ -18,9 +19,10 @@ class PatchCleaner():
         for patch in patches:
             patch_path = f"{self.DIR}/{self.CLUSTER_MAP[num_cluster]}/{patch}"
             image_patch = cv2.imread(patch_path)
-            _, _, vessel_mask_cleaned = self.processing.process_patch(image_patch, use_hematoxylin=False, min_size=100)
-            cv2.imwrite(f"patches/patches_bvd_clustd_cleaned/{self.CLUSTER_MAP[num_cluster]}/{patch}", vessel_mask_cleaned)
-            
+            _, eosin, vessel_mask_cleaned = self.processing.process_patch(image_patch, use_hematoxylin=False, min_size=100)
+            eosin = (eosin * 255).astype(np.uint8)
+            # cv2.imwrite(f"patches/patches_bvd_clustd_cleaned/{self.CLUSTER_MAP[num_cluster]}/{patch}", vessel_mask_cleaned)
+            cv2.imwrite(f"patches/patches_bvd_clustd_HE/{self.CLUSTER_MAP[num_cluster]}/{patch}", eosin)
 
     def clean_patches(self):
         self.clean_cluster(1)

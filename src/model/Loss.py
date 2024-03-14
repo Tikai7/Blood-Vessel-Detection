@@ -17,7 +17,7 @@ class Loss():
         @param y_true : torch.Tensor, The true labels.
         """
 
-        loss = nn.BCEWithLogitsLoss()
+        loss = nn.BCELoss()
         return loss(y_pred, y_true)
     
     @staticmethod

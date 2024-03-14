@@ -23,10 +23,13 @@ class DataLoaderManager(Dataset):
     def __init__(self, root_dir, shape=(64,64)) -> None:
         self.SHAPE = shape
         self.root_dir = root_dir
-        self.image_folder = os.path.join(root_dir, 'img')
-        self.mask_folder = os.path.join(root_dir, 'mask')
-        self.image_filenames = os.listdir(self.image_folder)
-        self.mask_filenames = os.listdir(self.mask_folder)
+        self.image_folder = os.path.join(root_dir, 'patches_bvd_clustd_HE')
+        self.mask_folder = os.path.join(root_dir, 'patches_bvd_clustd_cleaned')
+
+        self.image_filenames = self._flatten_folder(self.image_folder)
+        self.mask_filenames = self._flatten_folder(self.mask_folder)
+
+        
         self.transform = transforms.Compose([
             transforms.Resize(self.SHAPE),
             transforms.ToTensor(),
@@ -37,20 +40,27 @@ class DataLoaderManager(Dataset):
             transforms.ToTensor()
         ])
 
+    def _flatten_folder(self, folder):
+        filenames = []
+        for file in os.listdir(folder):
+            image_files = os.listdir(f"{self.root_dir}\patches_bvd_clustd_HE\{file}")
+            for image in image_files:
+                filenames.append(f"{file}/{image}")
+        return filenames
 
     def __len__(self):
         return len(self.image_filenames)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.image_folder, self.image_filenames[idx])
-        mask_name = os.path.join(self.mask_folder, self.mask_filenames[idx])
+        img_name = os.path.normpath(os.path.join(self.image_folder, self.image_filenames[idx]))
+        mask_name = os.path.normpath(os.path.join(self.mask_folder, self.mask_filenames[idx]))
 
         image = Image.open(img_name).convert('L')        
         mask = Image.open(mask_name).convert('L')  
-    
+        
         image = self.transform(image)
         mask = self.target_transform(mask)
-
+        
         return image, mask
     
     def show_data(self, X):
@@ -70,14 +80,5 @@ class DataLoaderManager(Dataset):
         plt.imshow(yi[0][0], cmap='gray')
         plt.show()
 
-# dataset = DataLoaderManager("dataset/archive", (64,64))
+        
 
-# train_size = int(0.8 * len(dataset))
-# val_size = len(dataset) - train_size
-
-# train_set, val_set = random_split(dataset, [train_size, val_size])
-
-# train_loader = DataLoader(train_set, batch_size=4, shuffle=True)
-# val_loader = DataLoader(val_set, batch_size=4, shuffle=False)
-
-# dataset.show_data(train_loader)

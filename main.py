@@ -1,13 +1,12 @@
+import cv2
 import os 
+import numpy as np
+import matplotlib.pyplot as plt
 from src.clean_patches import PatchCleaner
+from src.image_processing import Processing
 
 def main():
-    if not os.path.exists("patches/patches_bvd_clustd_cleaned"):
-        os.makedirs("patches/patches_bvd_clustd_cleaned")
-        patchCleaner = PatchCleaner()
-        patchCleaner.clean_patches()
-
-
+    pass
 
 if __name__ == "__main__":
     main()
