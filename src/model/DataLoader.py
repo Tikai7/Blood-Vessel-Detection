@@ -1,17 +1,14 @@
-import torch
-import numpy as np
 import matplotlib.pyplot as plt
 import os
-from torch.utils.data import  DataLoader, random_split
 from torchvision import transforms
-from sklearn.decomposition import PCA
-
-import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image
 import os
 
+def binarize(image):
+    image[image > 0] = 1
+    return image
 
 class DataLoaderManager(Dataset):
     """A class to represent the data loader manager for the U-Net model for vessel segmentation.
@@ -23,13 +20,12 @@ class DataLoaderManager(Dataset):
     def __init__(self, root_dir, shape=(64,64)) -> None:
         self.SHAPE = shape
         self.root_dir = root_dir
-        self.image_folder = os.path.join(root_dir, 'patches_bvd_clustd_HE')
-        self.mask_folder = os.path.join(root_dir, 'patches_bvd_clustd_cleaned')
-
-        self.image_filenames = self._flatten_folder(self.image_folder)
-        self.mask_filenames = self._flatten_folder(self.mask_folder)
-
+        self.image_folder = os.path.join(root_dir, 'img')
+        self.mask_folder = os.path.join(root_dir, 'mask')
         
+        self.image_filenames = os.listdir(self.image_folder)
+        self.mask_filenames = os.listdir(self.mask_folder)
+    
         self.transform = transforms.Compose([
             transforms.Resize(self.SHAPE),
             transforms.ToTensor(),
@@ -37,27 +33,23 @@ class DataLoaderManager(Dataset):
         ])
         self.target_transform = transforms.Compose([
             transforms.Resize(self.SHAPE),
-            transforms.ToTensor()
+            transforms.ToTensor(),
+            transforms.Lambda(binarize), 
         ])
-
-    def _flatten_folder(self, folder):
-        filenames = []
-        for file in os.listdir(folder):
-            image_files = os.listdir(f"{self.root_dir}\patches_bvd_clustd_HE\{file}")
-            for image in image_files:
-                filenames.append(f"{file}/{image}")
-        return filenames
 
     def __len__(self):
         return len(self.image_filenames)
-
+    
     def __getitem__(self, idx):
-        img_name = os.path.normpath(os.path.join(self.image_folder, self.image_filenames[idx]))
-        mask_name = os.path.normpath(os.path.join(self.mask_folder, self.mask_filenames[idx]))
+        img_name = os.path.join(self.image_folder, self.image_filenames[idx])
+        mask_name = os.path.join(self.mask_folder, self.mask_filenames[idx])
+        try:
+            image = Image.open(img_name).convert('L')
+            mask = Image.open(mask_name).convert('L')
+        except:
+#             print(f"Unable to open image file {img_name}. Skipping this file.")
+            return self.__getitem__(idx + 1)  # try the next file
 
-        image = Image.open(img_name).convert('L')        
-        mask = Image.open(mask_name).convert('L')  
-        
         image = self.transform(image)
         mask = self.target_transform(mask)
         
@@ -81,4 +73,3 @@ class DataLoaderManager(Dataset):
         plt.show()
 
         
-

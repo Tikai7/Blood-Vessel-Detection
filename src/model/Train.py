@@ -60,7 +60,7 @@ class Trainer:
         plt.legend()
         plt.show()
 
-    def fit(self, learning_rate = 1e-4, epochs : int = 100):
+    def fit(self, learning_rate = 1e-4, epochs : int = 100, pos_weight : float = None):
         """Method to train the model.
         @param learning_rate : float, The learning rate for the optimizer.
         @param epochs : int, The number of epochs for training the model.
@@ -71,17 +71,16 @@ class Trainer:
         val_loss, train_loss = [], []
         for epoch in range(epochs):
             # Training
+            train_epoch_loss = 0
             for i, (batch_x, batch_y) in enumerate(self.train_loader):
-                print(f"Batch [{i+1}/{len(self.train_loader)}]")
                 batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
                 y_pred = self.model(batch_x)
-                y_pred = torch.sigmoid(y_pred)
                 self.optimizer.zero_grad()
-                loss = self.loss_fn(y_pred, batch_y)
+                loss = self.loss_fn(y_pred, batch_y, pos_weight)
                 loss.backward()
-                loss_item = loss.item()
-                train_loss.append(loss_item )
                 self.optimizer.step()
+                train_epoch_loss += loss.item()
+            train_loss.append(train_epoch_loss/len(self.train_loader))
             # Validation
             print("Validating...")
             with torch.no_grad():
@@ -89,15 +88,11 @@ class Trainer:
                 for batch_x, batch_y in self.val_loader:
                     batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
                     y_pred = self.model(batch_x)
-                    y_pred = torch.sigmoid(y_pred)
-                    val_loss = self.loss_fn(y_pred, batch_y)
-                    val_epoch_loss += val_loss.item()
+                    loss_val = self.loss_fn(y_pred, batch_y, pos_weight)
+                    val_epoch_loss += loss_val.item()
                 val_loss.append(val_epoch_loss / len(self.val_loader))
             
             print(f"Epoch [{epoch+1}/{epochs}], Training Loss: {train_loss[-1]}, Validation Loss: {val_loss[-1]}")
 
         print("Training complete.")
         return train_loss, val_loss
-    
-
-
