@@ -17,15 +17,23 @@ class DataLoaderManager(Dataset):
     - The class contains a static method to build a data loader from the input data.
     """
 
-    def __init__(self, root_dir, shape=(64,64)) -> None:
+    def __init__(self, root_dir, kidney_dir=False, shape=(64,64)) -> None:
         self.SHAPE = shape
         self.root_dir = root_dir
-        self.image_folder = os.path.join(root_dir, 'img')
-        self.mask_folder = os.path.join(root_dir, 'mask')
-        
-        self.image_filenames = os.listdir(self.image_folder)
-        self.mask_filenames = os.listdir(self.mask_folder)
-    
+        self.kidney_dir = "dataset/archive"
+
+        if kidney_dir:
+            self.image_folder = os.path.join(self.kidney_dir, 'img')
+            self.mask_folder = os.path.join(self.kidney_dir, 'mask')
+            self.mask_filenames = os.listdir(self.image_folder)
+            self.image_filenames = os.listdir(self.mask_folder)
+            self.image_filenames = [filename for filename in self.image_filenames if filename in self.mask_filenames]
+        else:
+            self.image_folder = os.path.join(root_dir, 'patches_bvd_clustd')
+            self.mask_folder = os.path.join(root_dir, 'patches_bvd_clustd_mask')
+            self.mask_filenames = self.get_filenames(self.mask_folder)
+            self.image_filenames = self.get_filenames(self.image_folder, self.mask_filenames)
+
         self.transform = transforms.Compose([
             transforms.Resize(self.SHAPE),
             transforms.ToTensor(),
@@ -55,6 +63,17 @@ class DataLoaderManager(Dataset):
         
         return image, mask
     
+    def get_filenames(self, folder, mask_filenames=None):
+        clusters = os.listdir(folder)
+        filenames = []
+        for cluster in clusters:
+            files = os.listdir(os.path.join(folder, cluster))
+            files = [os.path.join(cluster, file) for file in files]
+            filenames.extend(files)
+        if mask_filenames:
+            filenames = [filename for filename in filenames if filename in mask_filenames]
+        return filenames
+
     def show_data(self, X):
         """A static method to visualize the input data.
         @param X: The input data.

@@ -2,9 +2,6 @@ import json
 import numpy as np
 import cv2
 import os
-import fnmatch
-from pathlib import Path
-import matplotlib.pyplot as plt
 
 class Masker:
     def __init__(self) -> None:

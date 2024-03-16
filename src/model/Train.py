@@ -60,6 +60,30 @@ class Trainer:
         plt.legend()
         plt.show()
 
+    def test_on_batch(self, loader : DataLoader):
+        """Method to test the model on a batch of validation/test data.
+        @param loader : DataLoader, The validation or test data loader.
+        """
+        print("Testing the model on a batch of validation data...")
+        self.model.eval()
+        i,(batch_x,batch_y) = next(enumerate(loader))
+        self.model = self.model.to(self.device)
+        batch_x = batch_x.to(self.device)
+        mask = self.model.predict(batch_x)
+        mask = mask.cpu().numpy()
+        batch_x = batch_x.cpu().numpy()
+
+        mask = (mask > 0.5)
+
+        plt.figure(figsize=(12,7))
+        plt.subplot(131)
+        plt.imshow(batch_x[0][0,:,:])
+        plt.subplot(132)
+        plt.imshow(batch_y[0][0,:,:])
+        plt.subplot(133)
+        plt.imshow(mask[0][0,:,:])
+        plt.show()
+
     def fit(self, learning_rate = 1e-4, epochs : int = 100, pos_weight : float = None):
         """Method to train the model.
         @param learning_rate : float, The learning rate for the optimizer.
