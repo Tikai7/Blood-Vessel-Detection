@@ -19,18 +19,14 @@ def calculate_weights(dataloader):
         n_negative += (mask == 0).sum().item()
         n_positive += (mask == 1).sum().item()
 
-    total = n_negative + n_positive
-    weight_negative = total / (2 * n_negative)
-    weight_positive = total / (2 * n_positive)
-
-    return weight_negative, weight_positive
+    pos_weight = n_negative/n_positive
+    return pos_weight
 
 # ------------------------------ CONSTANTS ------------------------------
+epochs = 50
 image_size = 224
-patch_size = 16
 num_classes = 2  
 learning_rate = 1e-4
-epochs = 1
 train_size = 0.8
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -47,17 +43,17 @@ train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
 val_loader = DataLoader(val_set, batch_size=32, shuffle=True)
 
 
-neg_weight,pos_weight = calculate_weights(dataset)
-print(f"Negative weights : {neg_weight}")
+pos_weight = calculate_weights(train_set)
 print(f"Positive weights : {pos_weight}")
+
 
 
 dataset.show_data(train_loader)
 dataset.show_data(val_loader)
 
 # ------------------------------ MODEL TRAINING ------------------------------
-# Encoder can be one of 'vgg16', 'vgg19', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d'
-encoder_name = 'vgg19'
+# Encoder can be one of 'vgg16', 'vgg19', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'efficientnet-b3'
+encoder_name = 'efficientnet-b3'
 backbone = smp.encoders.get_encoder(encoder_name, pretrained=True)
 model = smp.Unet(encoder_name=encoder_name, encoder_weights='imagenet', classes=num_classes, in_channels=1)
 model = model.to(device)

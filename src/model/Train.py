@@ -67,7 +67,7 @@ class Trainer:
         """
         print(f"Training the model on {self.device}...")
         self.model.to(self.device)
-        self.optimizer = self.optimizer(self.model.parameters(), lr=learning_rate)
+        self.optimizer = self.optimizer(self.model.parameters(), lr=learning_rate, weight_decay=0.01)
         val_loss, train_loss = [], []
         for epoch in range(epochs):
             # Training

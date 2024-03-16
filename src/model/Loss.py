@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import segmentation_models_pytorch as smp
 
 # Smoothing factor for the Dice loss
 SMOOTH = 1e-6
@@ -17,9 +18,9 @@ class Loss():
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        loss = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([pos_weight]).to(y_true.device))
-#         loss = nn.BCEWithLogitsLoss()
-        return loss(y_pred, y_true)
+        pos_weight = torch.tensor([pos_weight]).to(y_true.device) if pos_weight else None
+        loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        return loss(y_pred,  y_true)
 
     @staticmethod
     def dice_loss(y_pred, y_true, pos_weight=None):
@@ -28,14 +29,13 @@ class Loss():
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        y_pred = torch.sigmoid(y_pred)
-        intersection = (y_pred * y_true).sum()
-        return 1 - (2. * intersection + SMOOTH) / (y_pred.sum() + y_true.sum() + SMOOTH)
-    
+        dice_loss = smp.losses.DiceLoss(mode='binary')
+        return dice_loss(y_pred,y_true)
+
     @staticmethod
     def combined_loss(y_pred, y_true, pos_weight=None):
         """Method to compute the combined loss, which is the sum of the binary cross-entropy loss and the Dice loss.
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        return Loss.bce_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true)
+        return 0.5*(Loss.bce_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true))
