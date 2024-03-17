@@ -7,7 +7,7 @@ import segmentation_models_pytorch as smp
 class Tester():
     def __init__(self) -> None:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.state = torch.load("params/local_model_EN_b3_BD_adamW")
+        self.state = torch.load("params/local_model_EN_b3_BD_adamW_kidney_minmax")
         encoder_name = 'efficientnet-b3'
         model = smp.Unet(encoder_name=encoder_name, classes=1, in_channels=1)
         model.load_state_dict(self.state)
@@ -17,13 +17,18 @@ class Tester():
         self.transform = transforms.Compose([
             transforms.Resize((224,224)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5], std=[0.5]),
+            # transforms.Normalize(mean=[0.5], std=[0.5]),
+            transforms.Lambda(self.minmax)
         ])
 
-    def binarize(self, image):
-        image[image > 0.5] = 1
-        image[image <= 0.5] = 0
+    def minmax(self, image):
+        image = (image - image.min()) / (image.max() - image.min())
         return image
+    
+    def binarize(self, mask):
+        mask[mask > 0.5] = 1
+        mask[mask <= 0.5] = 0
+        return mask
     
     def predict(self, image):
         image = self.transform(image)

@@ -1,8 +1,5 @@
 import torch
 from torch.utils.data import DataLoader
-from vit_pytorch import ViT
-from torch import nn
-import matplotlib.pyplot as plt
 from torch.utils.data import random_split
 from DataLoader import DataLoaderManager
 from Train import Trainer
@@ -14,11 +11,9 @@ import segmentation_models_pytorch as smp
 def calculate_weights(dataloader):
     n_negative = 0
     n_positive = 0
-
     for _, mask in dataloader:
         n_negative += (mask == 0).sum().item()
         n_positive += (mask == 1).sum().item()
-
     pos_weight = n_negative/n_positive
     return pos_weight
 
@@ -33,7 +28,7 @@ batch_size = 16
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # ------------------------------ DATA LOADING ------------------------------
-dataset = DataLoaderManager(root_dir="patches",kidney_dir=True, shape=(image_size,image_size))
+dataset = DataLoaderManager(root_dir="patches",kidney_dir=True, data_augmentation=True, shape=(image_size,image_size))
 
 train_size = int(train_size * len(dataset))
 val_size = len(dataset) - train_size
@@ -65,4 +60,4 @@ train_loss, val_loss = trainer.set_model(model)\
 # ------------------------------ PLOTTING ------------------------------
 trainer.plot_loss(train_loss, val_loss)
 trainer.test_on_batch(val_loader)
-torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_kidney")
+torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_kidney_augmented")

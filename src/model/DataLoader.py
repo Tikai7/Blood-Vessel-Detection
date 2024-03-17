@@ -1,14 +1,12 @@
+import torch
 import matplotlib.pyplot as plt
 import os
 from torchvision import transforms
 from torch.utils.data import Dataset
 from torchvision import transforms
+import torchvision.transforms.functional as F
 from PIL import Image
 import os
-
-def binarize(image):
-    image[image > 0] = 1
-    return image
 
 class DataLoaderManager(Dataset):
     """A class to represent the data loader manager for the U-Net model for vessel segmentation.
@@ -17,10 +15,11 @@ class DataLoaderManager(Dataset):
     - The class contains a static method to build a data loader from the input data.
     """
 
-    def __init__(self, root_dir, kidney_dir=False, shape=(64,64)) -> None:
+    def __init__(self, root_dir, kidney_dir=False, data_augmentation=False, shape=(64,64)) -> None:
         self.SHAPE = shape
         self.root_dir = root_dir
         self.kidney_dir = "dataset/archive"
+        self.data_augmentation = data_augmentation
 
         if kidney_dir:
             self.image_folder = os.path.join(self.kidney_dir, 'img')
@@ -33,15 +32,18 @@ class DataLoaderManager(Dataset):
             self.mask_filenames = self.get_filenames(self.mask_folder)
             self.image_filenames = self.get_filenames(self.image_folder, self.mask_filenames)
 
-        self.transform = transforms.Compose([
+        self.same_transform = transforms.Compose([
             transforms.Resize(self.SHAPE),
             transforms.ToTensor(),
+        ])
+        self.transform = transforms.Compose([
+            self.same_transform,
             transforms.Normalize(mean=[0.5], std=[0.5]),
+            # transforms.Lambda(self.minmax),
         ])
         self.target_transform = transforms.Compose([
-            transforms.Resize(self.SHAPE),
-            transforms.ToTensor(),
-            transforms.Lambda(binarize), 
+            self.same_transform,
+            transforms.Lambda(self.binarize), 
         ])
 
     def __len__(self):
@@ -54,13 +56,46 @@ class DataLoaderManager(Dataset):
             image = Image.open(img_name).convert('L')
             mask = Image.open(mask_name).convert('L')
         except:
-#             print(f"Unable to open image file {img_name}. Skipping this file.")
-            return self.__getitem__(idx + 1)  # try the next file
+            return self.__getitem__(idx + 1)  
 
+
+        if self.data_augmentation:
+            image, mask = self.data_augmentation_transform(image, mask)
+            
         image = self.transform(image)
         mask = self.target_transform(mask)
         
         return image, mask
+    
+    def data_augmentation_transform(self, image, mask):
+        """A static method to perform data augmentation on the input image.
+        @param image: The input image.
+        @return: The augmented image.
+        """ 
+        if torch.rand(1) > 0.5:
+            image = F.hflip(image)
+            mask = F.hflip(mask)
+        if torch.rand(1) > 0.5:
+            image = F.vflip(image)
+            mask = F.vflip(mask)
+        if torch.rand(1) > 0.5:
+            angle = torch.randint(low=-10, high=10, size=(1,)).item()
+            image = F.rotate(image, angle)
+            mask = F.rotate(mask, angle)
+        if torch.rand(1) > 0.5:
+            angle = torch.randint(low=-10, high=10, size=(1,)).item()
+            image = F.affine(image, angle, translate=(0,0), scale=1, shear=0)
+            mask = F.affine(mask, angle, translate=(0,0), scale=1, shear=0)
+
+        return image, mask
+    
+    def minmax(self, image):
+        image = (image - image.min()) / (image.max() - image.min())
+        return image
+    
+    def binarize(self, image):
+        image[image > 0] = 1
+        return image
     
     def get_filenames(self, folder, mask_filenames=None):
         clusters = os.listdir(folder)
@@ -80,7 +115,10 @@ class DataLoaderManager(Dataset):
         """
         
         xi, yi = next(iter(X))
+        print("Shape of the input data: ")
         print(xi.shape, yi.shape)
+        print("Min and Max of the input data: ")
+        print(xi.min(), xi.max(), yi.min(), yi.max())
         plt.figure(figsize=(10, 10))
         plt.subplot(1, 2, 1)
         plt.title('Image')
