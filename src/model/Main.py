@@ -33,7 +33,7 @@ batch_size = 16
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # ------------------------------ DATA LOADING ------------------------------
-dataset = DataLoaderManager(root_dir="patches",kidney_dir=False, shape=(image_size,image_size))
+dataset = DataLoaderManager(root_dir="patches",kidney_dir=True, shape=(image_size,image_size))
 
 train_size = int(train_size * len(dataset))
 val_size = len(dataset) - train_size
@@ -65,4 +65,4 @@ train_loss, val_loss = trainer.set_model(model)\
 # ------------------------------ PLOTTING ------------------------------
 trainer.plot_loss(train_loss, val_loss)
 trainer.test_on_batch(val_loader)
-torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW")
+torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_kidney")

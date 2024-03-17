@@ -33,21 +33,24 @@ class Tester():
         mask = mask.squeeze(0)
         mask = mask.detach().cpu().numpy()
         mask = self.binarize(mask)
-        return mask
+        image = image.squeeze(0)
+        image = image.detach().cpu().numpy()
+        masked_image = image*mask
+        return mask, masked_image
 
 tester = Tester()
 patch = "2_1265_001B._patches_26_46.png"
 cluster = "001B_clustd"
 image = Image.open(f"patches/patches_bvd_clustd/{cluster}/{patch}").convert('L')
-mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}").convert('L')
-mask_pred = tester.predict(image.copy())
+mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}").convert('L') 
+mask_pred, mask_image = tester.predict(image.copy())
 
 plt.figure(figsize=(10,10))
 plt.subplot(1,3,1)
 plt.imshow(image, cmap='gray')
 plt.title("Original Image")
 plt.subplot(1,3,2)
-plt.imshow(mask, cmap='gray')
+plt.imshow(mask_image[0], cmap='gray')
 plt.title("Original Mask")
 plt.subplot(1,3,3)
 plt.imshow(mask_pred[0], cmap='gray')

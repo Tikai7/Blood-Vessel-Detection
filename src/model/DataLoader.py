@@ -27,7 +27,6 @@ class DataLoaderManager(Dataset):
             self.mask_folder = os.path.join(self.kidney_dir, 'mask')
             self.mask_filenames = os.listdir(self.image_folder)
             self.image_filenames = os.listdir(self.mask_folder)
-            self.image_filenames = [filename for filename in self.image_filenames if filename in self.mask_filenames]
         else:
             self.image_folder = os.path.join(root_dir, 'patches_bvd_clustd')
             self.mask_folder = os.path.join(root_dir, 'patches_bvd_clustd_mask')
