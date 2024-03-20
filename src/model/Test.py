@@ -7,7 +7,7 @@ import segmentation_models_pytorch as smp
 class Tester():
     def __init__(self) -> None:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.state = torch.load("params/local_model_EN_b3_BD_adamW_kidney_minmax")
+        self.state = torch.load("params/local_model_EN_b3_BD_adamW_kidney_weight_augmented_2C")
         encoder_name = 'efficientnet-b3'
         model = smp.Unet(encoder_name=encoder_name, classes=1, in_channels=1)
         model.load_state_dict(self.state)
@@ -17,8 +17,8 @@ class Tester():
         self.transform = transforms.Compose([
             transforms.Resize((224,224)),
             transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.5], std=[0.5]),
-            transforms.Lambda(self.minmax)
+            transforms.Normalize(mean=[0.5], std=[0.5]),
+            # transforms.Lambda(self.minmax)
         ])
 
     def minmax(self, image):
@@ -44,10 +44,15 @@ class Tester():
         return mask, masked_image
 
 tester = Tester()
-patch = "2_1265_001B._patches_26_46.png"
-cluster = "001B_clustd"
+# patch = "2_1265_001B._patches_26_46.png"
+# cluster = "001B_clustd"
+# patch = "0_3268_0024B._patches_8_12.png"
+# cluster = "0024B_clustd"
+patch = "46_2633_003DEF._patches_42_13.png" 
+# patch = "46_2704_003DEF._patches_43_11.png"
+cluster = "003DEF_clustd"
 image = Image.open(f"patches/patches_bvd_clustd/{cluster}/{patch}").convert('L')
-mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}").convert('L') 
+# mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}").convert('L') 
 mask_pred, mask_image = tester.predict(image.copy())
 
 plt.figure(figsize=(10,10))
@@ -56,7 +61,7 @@ plt.imshow(image, cmap='gray')
 plt.title("Original Image")
 plt.subplot(1,3,2)
 plt.imshow(mask_image[0], cmap='gray')
-plt.title("Original Mask")
+plt.title("Predicted Image*Mask")
 plt.subplot(1,3,3)
 plt.imshow(mask_pred[0], cmap='gray')
 plt.title("Predicted Mask")

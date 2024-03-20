@@ -29,10 +29,23 @@ class Masker:
         # save the mask
         cv2.imwrite(mask_img_filename, mask)
 
+    def match_image_to_mask(self, cluster="001B_clustd"):
+        mask_filenames = os.listdir(self.mask_dir + '/' + cluster)
+        unmask_filenames = os.listdir(self.unmask_dir + '/' + cluster)  
+        filtered_filenames = list(filter(lambda x: x in unmask_filenames, mask_filenames))
+        for filename in filtered_filenames:
+            image = cv2.imread(self.unmask_dir + '/' + cluster + '/' + filename)
+            cv2.imwrite(f"C:/Cours Sorbonne/S2/PLDAC/Projet/dataset/archive/img/{filename}",image)
 
+    
     def build_mask(self):
+        skip_clusters = ["001B_clustd", "0024B_clustd"]
+        # "003DEF_clustd"
         json_dir = os.listdir(self.json_dir)
         for json_filename in json_dir:
+            if json_filename in skip_clusters:
+                continue
+            print(f"Processing {json_filename}")
             # get the original image filename
             mask_clustered_dir = self.mask_dir + '/' + json_filename
             unmasked_clustered_dir = self.unmask_dir + '/' + json_filename
@@ -47,3 +60,5 @@ class Masker:
 
 masker = Masker()
 masker.build_mask()
+# masker.match_image_to_mask(cluster="001B_clustd")
+# masker.match_image_to_mask(cluster="0024B_clustd")
