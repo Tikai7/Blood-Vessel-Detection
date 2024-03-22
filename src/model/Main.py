@@ -38,7 +38,6 @@ val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True)
 
 dataset.show_data(train_loader)
 dataset.show_data(val_loader)
-
 # ------------------------------ MODEL TRAINING ------------------------------
 # Encoder can be one of 'vgg16', 'vgg19', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'efficientnet-b3'
 encoder_name = 'efficientnet-b3'
@@ -58,4 +57,4 @@ train_loss, val_loss, precision, recall, val_p, val_r = trainer.set_model(model)
 trainer.plot_loss(train_loss, val_loss)
 trainer.plot_precision_recall(precision, recall, val_p, val_r)
 trainer.test_on_batch(val_loader)
-torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_augmented_3D_2C")
+torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_weight_augmented_3D_2C_100epochs")

@@ -7,7 +7,7 @@ import segmentation_models_pytorch as smp
 class Tester():
     def __init__(self) -> None:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.state = torch.load("params/local_model_EN_b3_BD_adamW_kidney_weight_augmented_3D_2C")
+        self.state = torch.load("params/local_model_EN_b3_BD_adamW_weight_augmented_3D_2C")
         encoder_name = 'efficientnet-b3'
         model = smp.Unet(encoder_name=encoder_name, classes=1, in_channels=3)
         model.load_state_dict(self.state)
@@ -49,7 +49,7 @@ tester = Tester()
 # patch = "0_3268_0024B._patches_8_12.png"
 # cluster = "0024B_clustd"
 # patch = "46_2633_003DEF._patches_42_13.png" 
-patch = "46_2704_003DEF._patches_43_11.png"
+patch = "49_3982_003DEF._patches_8_45.png"
 cluster = "003DEF_clustd"
 image = Image.open(f"patches/patches_bvd_clustd/{cluster}/{patch}")
 # mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}") 
