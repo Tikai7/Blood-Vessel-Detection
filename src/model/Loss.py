@@ -22,6 +22,7 @@ class Loss():
         loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         return loss(y_pred,  y_true)
 
+    # twersky et FOCAL LOSS
     @staticmethod
     def dice_loss(y_pred, y_true, pos_weight=None):
         """Method to compute the Dice loss between the predicted and true labels.

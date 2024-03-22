@@ -1,5 +1,5 @@
 import cv2
-from src.image_processing import Processing 
+from model.Processing import Processing 
 import os 
 import matplotlib.pyplot as plt
 import numpy as np 

@@ -18,7 +18,7 @@ def calculate_weights(dataloader):
     return pos_weight
 
 # ------------------------------ CONSTANTS ------------------------------
-epochs = 50
+epochs = 100
 image_size = 224
 num_classes = 1
 learning_rate = 1e-4
@@ -26,7 +26,7 @@ train_size = 0.8
 batch_size = 16
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # ------------------------------ DATA LOADING ------------------------------
-dataset = DataLoaderManager(root_dir="patches",kidney_dir=True, data_augmentation=True, shape=(image_size,image_size))
+dataset = DataLoaderManager(root_dir="patches",kidney_dir=False, data_augmentation=True, shape=(image_size,image_size))
 
 train_size = int(train_size * len(dataset))
 val_size = len(dataset) - train_size
@@ -38,10 +38,11 @@ val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=True)
 
 dataset.show_data(train_loader)
 dataset.show_data(val_loader)
+
 # ------------------------------ MODEL TRAINING ------------------------------
 # Encoder can be one of 'vgg16', 'vgg19', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'efficientnet-b3'
 encoder_name = 'efficientnet-b3'
-model = smp.Unet(encoder_name=encoder_name, encoder_weights='imagenet', classes=num_classes, in_channels=1)
+model = smp.Unet(encoder_name=encoder_name, encoder_weights='imagenet', classes=num_classes, in_channels=3)
 model = model.to(device)
 optimizer = torch.optim.AdamW
 loss = Loss.combined_loss
@@ -57,4 +58,4 @@ train_loss, val_loss, precision, recall, val_p, val_r = trainer.set_model(model)
 trainer.plot_loss(train_loss, val_loss)
 trainer.plot_precision_recall(precision, recall, val_p, val_r)
 trainer.test_on_batch(val_loader)
-torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_kidney_augmented_2C_PR")
+torch.save(model.state_dict(), "params/local_model_EN_b3_BD_adamW_augmented_3D_2C")

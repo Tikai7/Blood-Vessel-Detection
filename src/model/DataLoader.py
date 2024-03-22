@@ -1,6 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
 import os
+import numpy as np
+from Processing import Processing
 from torchvision import transforms
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -53,7 +55,7 @@ class DataLoaderManager(Dataset):
         img_name = os.path.join(self.image_folder, self.image_filenames[idx])
         mask_name = os.path.join(self.mask_folder, self.mask_filenames[idx])
         try:
-            image = Image.open(img_name).convert('L')
+            image = Image.open(img_name)
             mask = Image.open(mask_name).convert('L')
         except:
             return self.__getitem__(idx + 1)  
@@ -82,11 +84,7 @@ class DataLoaderManager(Dataset):
             angle = torch.randint(low=-10, high=10, size=(1,)).item()
             image = F.rotate(image, angle)
             mask = F.rotate(mask, angle)
-        if torch.rand(1) > 0.5:
-            angle = torch.randint(low=-10, high=10, size=(1,)).item()
-            image = F.affine(image, angle, translate=(0,0), scale=1, shear=0)
-            mask = F.affine(mask, angle, translate=(0,0), scale=1, shear=0)
-
+        
         return image, mask
     
     def minmax(self, image):
@@ -122,7 +120,7 @@ class DataLoaderManager(Dataset):
         plt.figure(figsize=(10, 10))
         plt.subplot(1, 2, 1)
         plt.title('Image')
-        plt.imshow(xi[0][0], cmap='gray')
+        plt.imshow(xi[0][0])
         plt.subplot(1, 2, 2)
         plt.title('Mask')
         plt.imshow(yi[0][0], cmap='gray')
