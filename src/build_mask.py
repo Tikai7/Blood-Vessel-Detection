@@ -39,8 +39,7 @@ class Masker:
 
     
     def build_mask(self):
-        skip_clusters = ["001B_clustd", "0024B_clustd"]
-        # "003DEF_clustd"
+        skip_clusters = ["001B_clustd", "0024B_clustd","003DEF_clustd"]
         json_dir = os.listdir(self.json_dir)
         for json_filename in json_dir:
             if json_filename in skip_clusters:
@@ -59,6 +58,7 @@ class Masker:
                 self.gen_mask_img(json_filename, original_img_filename, mask_img_filename)
 
 masker = Masker()
-masker.build_mask()
+# masker.build_mask()
 # masker.match_image_to_mask(cluster="001B_clustd")
 # masker.match_image_to_mask(cluster="0024B_clustd")
+masker.match_image_to_mask(cluster="003DEF_clustd")

@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torchvision import transforms
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -7,7 +8,7 @@ import segmentation_models_pytorch as smp
 class Tester():
     def __init__(self) -> None:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.state = torch.load("params/local_model_EN_b3_BD_adamW_weight_augmented_3D_2C")
+        self.state = torch.load("params/local_model_EN_b3_BD_adamW_weight_augmented_3D_3C_100epochs")
         encoder_name = 'efficientnet-b3'
         model = smp.Unet(encoder_name=encoder_name, classes=1, in_channels=3)
         model.load_state_dict(self.state)
@@ -41,30 +42,33 @@ class Tester():
         image = image.squeeze(0)
         image = image.detach().cpu().numpy()
         masked_image = image*mask
-        return mask, masked_image
+        mask_image_transposed = np.transpose(masked_image, (1, 2, 0))
+        return mask, mask_image_transposed
 
 tester = Tester()
 # patch = "2_1265_001B._patches_26_46.png"
 # cluster = "001B_clustd"
-# patch = "0_3268_0024B._patches_8_12.png"
-# cluster = "0024B_clustd"
+patch = "0_3268_0024B._patches_8_12.png"
+cluster = "0024B_clustd"
 # patch = "46_2633_003DEF._patches_42_13.png" 
-patch = "49_3982_003DEF._patches_8_45.png"
-cluster = "003DEF_clustd"
+# cluster = "003DEF_clustd"
 image = Image.open(f"patches/patches_bvd_clustd/{cluster}/{patch}")
-# mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}") 
+mask = Image.open(f"patches/patches_bvd_clustd_mask/{cluster}/{patch}").convert('L')
 mask_pred, mask_image = tester.predict(image.copy())
-
+ 
 plt.figure(figsize=(10,10))
-plt.subplot(1,3,1)
-plt.imshow(image, cmap='gray')
+plt.subplot(1,4,1)
+plt.imshow(image)
 plt.title("Original Image")
-plt.subplot(1,3,2)
-plt.imshow(mask_image[0], cmap='gray')
-plt.title("Predicted Image*Mask")
-plt.subplot(1,3,3)
+plt.subplot(1,4,2)
+plt.imshow(mask, cmap='gray')
+plt.title("Original Mask")
+plt.subplot(1,4,3)
 plt.imshow(mask_pred[0], cmap='gray')
 plt.title("Predicted Mask")
+plt.subplot(1,4,4)
+plt.imshow(mask_image)
+plt.title("Masked Image")
 plt.show()
 
 

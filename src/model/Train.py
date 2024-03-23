@@ -30,13 +30,15 @@ class Trainer:
         self.model = model
         return self
     
-    def set_loader(self, train_loader : DataLoader, val_loader : DataLoader):
+    def set_loader(self, train_loader : DataLoader, val_loader : DataLoader, test_loader : DataLoader):
         """Method to set the training and validation data loaders.
         @param train_loader : DataLoader, The training data loader.
         @param val_loader : DataLoader, The validation data loader.
+        @param test_loader : DataLoader, The test data loader.
         """
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.test_loader = test_loader
         return self
     
     def set_loss_fn(self, loss_fn : torch.nn.Module):
@@ -90,30 +92,50 @@ class Trainer:
         pos_weight = n_negative/n_positive
         return pos_weight
 
-    def test_on_batch(self, loader : DataLoader):
+    def evaluate(self):
         """Method to test the model on a batch of validation/test data.
-        @param loader : DataLoader, The validation or test data loader.
+        @return accuracy : float, The accuracy of the model.
+        @return precision : float, The precision of the model.
+        @return recall : float, The recall of the model.
+        @return f1_score : float, The F1 score of the model.
         """
-        print("Testing the model on a batch of validation data...")
+        print("Testing the model")
+        y_true_all = []
+        y_pred_all = []
+        precision, recall = 0, 0
+        f1_score, accuracy = 0, 0
         self.model.eval()
-        i,(batch_x,batch_y) = next(enumerate(loader))
-        self.model = self.model.to(self.device)
-        batch_x = batch_x.to(self.device)
-        mask = self.model.predict(batch_x)
-        mask = mask.cpu().numpy()
-        batch_x = batch_x.cpu().numpy()
+        self.model.to(self.device)
+        for batch_x, batch_y in self.test_loader:
+            batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
+            mask = self.model(batch_x)
+            p, r = self.calculate_precision_recall(batch_y, mask)
+            precision += p
+            recall += r
+            y_pred_all.append(mask.detach().cpu())
+            y_true_all.append(batch_y.cpu())
+            
+        y_pred_all = torch.cat(y_pred_all, dim=0)
+        y_true_all = torch.cat(y_true_all, dim=0)
+        accuracy = self.calculate_accuracy(y_true_all, y_pred_all)
+        precision = precision/len(self.test_loader)
+        recall = recall/len(self.test_loader)
+        f1_score = 2*precision*recall/(precision+recall)
 
-        mask = (mask > 0.5)
+        print(f"Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1 Score: {f1_score}")
+    
+        return accuracy, precision, recall, f1_score
 
-        plt.figure(figsize=(12,7))
-        plt.subplot(131)
-        plt.imshow(batch_x[0][0,:,:])
-        plt.subplot(132)
-        plt.imshow(batch_y[0][0,:,:])
-        plt.subplot(133)
-        plt.imshow(mask[0][0,:,:])
-        plt.show()
 
+    def calculate_accuracy(self, y_true, y_pred): 
+        """Calculate the accuracy of the model.
+        @param y_true : torch.Tensor, The ground truth binary masks.
+        @param y_pred : torch.Tensor, The predicted binary masks.
+        """
+        y_pred_bin = (y_pred > 0.5).float()
+        accuracy = (y_pred_bin == y_true).sum().item() / (y_true.shape[0] * y_true.shape[1] * y_true.shape[2] * y_true.shape[3])
+        return accuracy
+    
     def calculate_precision_recall(self, y_true, y_pred):
         """Calculate precision and recall.
         @param y_true : torch.Tensor, The ground truth binary masks.
@@ -148,7 +170,6 @@ class Trainer:
             # Training
             train_epoch_loss = 0
             train_precision, train_recall = 0, 0
-
             for i, (batch_x, batch_y) in enumerate(self.train_loader):
                 batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
                 y_pred = self.model(batch_x)
