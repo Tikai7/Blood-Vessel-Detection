@@ -1,21 +1,11 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-from DataLoader import DataLoaderManager
-from Train import Trainer
-from Loss import Loss
+from Model.DataLoader import DataLoaderManager
+from Model.Train import Trainer
+from Model.Loss import Loss
 import segmentation_models_pytorch as smp
 
-
-# ------------------------------ UTILS ------------------------------
-def calculate_weights(dataloader):
-    n_negative = 0
-    n_positive = 0
-    for _, mask in dataloader:
-        n_negative += (mask == 0).sum().item()
-        n_positive += (mask == 1).sum().item()
-    pos_weight = n_negative/n_positive
-    return pos_weight
 
 # ------------------------------ CONSTANTS ------------------------------
 epochs = 100
