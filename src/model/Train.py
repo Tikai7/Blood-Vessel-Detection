@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
@@ -12,6 +13,24 @@ class Trainer:
         self.loss_fn : torch.nn.Module = None
         self.optimizer : torch.optim.Optimizer = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.history = {
+            "validation": {
+                "accuracy": [],
+                "loss": [],
+                "precision": [],
+                "recall": []
+            },
+            "training": {
+                "accuracy": [],
+                "loss": [],
+                "precision": [],
+                "recall": []
+            },
+            "params": {
+                "learning_rate": None,
+                "pos_weight": None
+            }
+        }
 
     def set_optimizer(self, optimizer : str):
         """Method to set the optimizer for the model.
@@ -92,6 +111,36 @@ class Trainer:
         pos_weight = n_negative/n_positive
         return pos_weight
 
+
+    def calculate_accuracy(self, y_true, y_pred): 
+        """Calculate the accuracy of the model.
+        @param y_true : torch.Tensor, The ground truth binary masks.
+        @param y_pred : torch.Tensor, The predicted binary masks.
+        """
+        y_pred_bin = (y_pred > 0.5).float()
+        accuracy = (y_pred_bin == y_true).sum().item() / (y_true.shape[0] * y_true.shape[1] * y_true.shape[2] * y_true.shape[3])
+        return accuracy
+    
+    def calculate_precision_recall(self, y_true, y_pred):
+        """Calculate precision and recall.
+        @param y_true : torch.Tensor, The ground truth binary masks.
+        @param y_pred : torch.Tensor, The predicted binary masks.
+        """
+        # Threshold predictions to binary
+        y_pred_bin = (y_pred > 0.5).float()
+
+        # Calculate true positives, false positives, and false negatives
+        tp = ((y_true * y_pred_bin).sum().item())
+        fp = ((y_pred_bin - y_true).clamp(min=0).sum().item())
+        fn = ((y_true - y_pred_bin).clamp(min=0).sum().item())
+
+        # Calculate precision and recall
+        precision = tp / (tp + fp + 1e-8)
+        recall = tp / (tp + fn + 1e-8)
+
+        return precision, recall
+    
+
     def evaluate(self):
         """Method to test the model on a batch of validation/test data.
         @return accuracy : float, The accuracy of the model.
@@ -127,64 +176,63 @@ class Trainer:
         return accuracy, precision, recall, f1_score
 
 
-    def calculate_accuracy(self, y_true, y_pred): 
-        """Calculate the accuracy of the model.
-        @param y_true : torch.Tensor, The ground truth binary masks.
-        @param y_pred : torch.Tensor, The predicted binary masks.
+    def save(self, path : str = "model.pth", history_path : str = "history.txt"):
+        """Method to save the model.
         """
-        y_pred_bin = (y_pred > 0.5).float()
-        accuracy = (y_pred_bin == y_true).sum().item() / (y_true.shape[0] * y_true.shape[1] * y_true.shape[2] * y_true.shape[3])
-        return accuracy
-    
-    def calculate_precision_recall(self, y_true, y_pred):
-        """Calculate precision and recall.
-        @param y_true : torch.Tensor, The ground truth binary masks.
-        @param y_pred : torch.Tensor, The predicted binary masks.
-        """
-        # Threshold predictions to binary
-        y_pred_bin = (y_pred > 0.5).float()
+        print("Saving the model...")
+        torch.save(self.model.state_dict(), path)
+        torch.save(self.history, history_path)
+        print("Model saved.")
 
-        # Calculate true positives, false positives, and false negatives
-        tp = ((y_true * y_pred_bin).sum().item())
-        fp = ((y_pred_bin - y_true).clamp(min=0).sum().item())
-        fn = ((y_true - y_pred_bin).clamp(min=0).sum().item())
 
-        # Calculate precision and recall
-        precision = tp / (tp + fp + 1e-8)
-        recall = tp / (tp + fn + 1e-8)
-
-        return precision, recall
-    
-    def fit(self, learning_rate = 1e-4, epochs : int = 100, pos_weight : float = None):
+    def fit(self, learning_rate = 1e-4, epochs : int = 100, pos_weight : float = None, weight_decay : float = 0.01):
         """Method to train the model.
         @param learning_rate : float, The learning rate for the optimizer.
         @param epochs : int, The number of epochs for training the model.
         """
         print(f"Training the model on {self.device}...")
         self.model.to(self.device)
-        self.optimizer = self.optimizer(self.model.parameters(), lr=learning_rate, weight_decay=0.01)
+        self.optimizer = self.optimizer(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+        
+        self.history["params"]["learning_rate"] = learning_rate
+        self.history["params"]["pos_weight"] = pos_weight
+
+        val_accuracy, train_accuracy = [], []
         val_loss, train_loss = [], []
-        val_precision, val_recall = [], []
-        precision, recall = [], []
+        val_precision, train_precision = [], []
+        val_recall, train_recall = [], []
+
         for epoch in range(epochs):
             # ----- Training
+            y_true_accuracy, y_pred_accuracy = [], []
+            y_true_val_accuracy, y_pred_val_accuracy = [], []
+
             train_epoch_loss = 0
-            train_precision, train_recall = 0, 0
+            precision, recall = 0, 0
             for _ , (batch_x, batch_y) in enumerate(self.train_loader):
                 batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
                 y_pred = self.model(batch_x)
                 with torch.no_grad():
                     p, r = self.calculate_precision_recall(batch_y, y_pred)
-                    train_precision += p
-                    train_recall += r
+                    precision += p
+                    recall += r
+                    y_true_accuracy.append(y_pred.detach().cpu())
+                    y_pred_accuracy.append(batch_y.cpu())
+            
                 self.optimizer.zero_grad()
                 loss = self.loss_fn(y_pred, batch_y, pos_weight)
                 loss.backward()
                 self.optimizer.step()
                 train_epoch_loss += loss.item()
+
+            y_true_accuracy = torch.cat(y_true_accuracy, dim=0)
+            y_pred_accuracy = torch.cat(y_pred_accuracy, dim=0)
+
+            train_accuracy.append(self.calculate_accuracy(y_true_accuracy, y_pred_accuracy))
             train_loss.append(train_epoch_loss/len(self.train_loader))
-            precision.append(train_precision/len(self.train_loader))
-            recall.append(train_recall/len(self.train_loader))
+            train_precision.append(precision/len(self.train_loader))
+            train_recall.append(recall/len(self.train_loader))
+
             # ----- Validation
             print("Validating...")
             with torch.no_grad():
@@ -198,7 +246,13 @@ class Trainer:
                     val_r += r
                     loss_val = self.loss_fn(y_pred, batch_y, pos_weight)
                     val_epoch_loss += loss_val.item()
-                    
+                    y_true_val_accuracy.append(y_pred.detach().cpu())
+                    y_pred_val_accuracy.append(batch_y.cpu())
+
+                y_true_val_accuracy = torch.cat(y_true_val_accuracy, dim=0)
+                y_pred_val_accuracy = torch.cat(y_pred_val_accuracy, dim=0)
+
+                val_accuracy.append(self.calculate_accuracy(y_true_val_accuracy, y_pred_val_accuracy))
                 val_loss.append(val_epoch_loss / len(self.val_loader))
                 val_precision.append(val_p/len(self.val_loader))
                 val_recall.append(val_r/len(self.val_loader))
@@ -206,4 +260,15 @@ class Trainer:
             print(f"Epoch [{epoch+1}/{epochs}], Training Loss: {train_loss[-1]}, Validation Loss: {val_loss[-1]}")
 
         print("Training complete.")
-        return train_loss, val_loss, precision, recall, val_precision, val_recall 
+        
+        self.history["training"]["accuracy"] = train_accuracy
+        self.history["training"]["loss"] = train_loss
+        self.history["training"]["precision"] = precision
+        self.history["training"]["recall"] = recall
+        self.history["validation"]["accuracy"] = val_accuracy
+        self.history["validation"]["loss"] = val_loss
+        self.history["validation"]["precision"] = val_precision
+        self.history["validation"]["recall"] = val_recall
+
+
+        return self.history

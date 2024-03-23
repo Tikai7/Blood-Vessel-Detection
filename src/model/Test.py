@@ -55,5 +55,37 @@ class Tester():
         masked_image = image*mask
         mask_image_transposed = np.transpose(masked_image, (1, 2, 0))
         return mask, mask_image_transposed
+    
+    def predict_loader(self, loader, max_images=5):
+        """Method to predict the mask for the input data loader.
+        @param loader, The input data loader.
+        """
+        for i, (image, mask) in enumerate(loader):
+            image = image.to(self.device)
+            mask = self.model(image)        
+            mask = mask.squeeze(0)
+            mask = mask.detach().cpu().numpy()
+            mask = self.binarize(mask)
+            image = image.squeeze(0)
+            image = image.detach().cpu().numpy()
+            masked_image = image*mask
 
+            image_transposed = np.transpose(image[0], (1, 2, 0))
+            mask_transposed = np.transpose(mask[0], (1, 2, 0))
+            masked_image = np.transpose(masked_image[0], (1, 2, 0))
+
+            if i < max_images:
+                plt.figure(figsize=(15,10))
+                plt.subplot(1, 3, 1)
+                plt.imshow(image_transposed)
+                plt.title("Input Image")
+                plt.subplot(1, 3, 2)
+                plt.imshow(mask_transposed)
+                plt.title("Predicted Mask")
+                plt.subplot(1, 3, 3)
+                plt.imshow(masked_image)
+                plt.title("Masked Image")
+                plt.show()
+            else:
+                break
 
