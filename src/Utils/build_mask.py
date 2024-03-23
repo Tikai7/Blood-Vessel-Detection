@@ -4,12 +4,20 @@ import cv2
 import os
 
 class Masker:
+    """ This class is used to generate the mask images from the json files.
+    """
+    
     def __init__(self) -> None:
         self.unmask_dir = "patches/patches_bvd_clustd"
         self.json_dir = "patches/patches_bvd_clustd_json"
         self.mask_dir = "patches/patches_bvd_clustd_mask"
         
     def gen_mask_img(self, json_filename, original_img_filename, mask_img_filename):
+        """ Generate a mask image from a json file and an original image.
+        @param json_filename: The json filename.
+        @param original_img_filename: The original image filename.
+        @param mask_img_filename: The mask image filename.
+        """
         # read json file
         with open(json_filename, "r") as f:
             data = f.read()
@@ -30,6 +38,9 @@ class Masker:
         cv2.imwrite(mask_img_filename, mask)
 
     def match_image_to_mask(self, cluster="001B_clustd"):
+        """ Match the images to the mask for a given cluster.
+        @param cluster: The cluster name.
+        """
         mask_filenames = os.listdir(self.mask_dir + '/' + cluster)
         unmask_filenames = os.listdir(self.unmask_dir + '/' + cluster)  
         filtered_filenames = list(filter(lambda x: x in unmask_filenames, mask_filenames))
@@ -39,6 +50,8 @@ class Masker:
 
     
     def build_mask(self):
+        """ Build the mask images from the json files.
+        """
         skip_clusters = ["001B_clustd", "0024B_clustd","003DEF_clustd"]
         json_dir = os.listdir(self.json_dir)
         for json_filename in json_dir:
@@ -58,7 +71,7 @@ class Masker:
                 self.gen_mask_img(json_filename, original_img_filename, mask_img_filename)
 
 masker = Masker()
-# masker.build_mask()
-# masker.match_image_to_mask(cluster="001B_clustd")
-# masker.match_image_to_mask(cluster="0024B_clustd")
+masker.build_mask()
+masker.match_image_to_mask(cluster="001B_clustd")
+masker.match_image_to_mask(cluster="0024B_clustd")
 masker.match_image_to_mask(cluster="003DEF_clustd")

@@ -90,8 +90,7 @@ class Processing():
         return self.vessel_mask_cleaned
     
     def visualize_results(self):
-        """
-            This function is used to visualize the results.
+        """This function is used to visualize the results.
         """
         image_masked = self.patch * self.vessel_mask_cleaned
 

@@ -4,9 +4,6 @@ from torch.utils.data import DataLoader
 
 class Trainer:
     """A class to represent the training process for the U-Net model for vessel segmentation.
-    - The class contains a fit method to train the model.
-    - The fit method takes the model, training and validation data loaders, loss function, optimizer, device, and number of epochs as input.
-    - The fit method trains the model for the specified number of epochs and returns the training and validation losses.
     """
     def __init__(self) -> None:
         self.model : torch.nn.Module = None
@@ -84,6 +81,9 @@ class Trainer:
         plt.show()
 
     def calculate_weights(self, dataloader):
+        """Method to calculate the positive weights for the loss function.
+        @param dataloader : DataLoader, The data loader to calculate the positive weights.
+        """
         n_negative = 0
         n_positive = 0
         for _, mask in dataloader:
@@ -167,10 +167,10 @@ class Trainer:
         val_precision, val_recall = [], []
         precision, recall = [], []
         for epoch in range(epochs):
-            # Training
+            # ----- Training
             train_epoch_loss = 0
             train_precision, train_recall = 0, 0
-            for i, (batch_x, batch_y) in enumerate(self.train_loader):
+            for _ , (batch_x, batch_y) in enumerate(self.train_loader):
                 batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
                 y_pred = self.model(batch_x)
                 with torch.no_grad():
@@ -185,7 +185,7 @@ class Trainer:
             train_loss.append(train_epoch_loss/len(self.train_loader))
             precision.append(train_precision/len(self.train_loader))
             recall.append(train_recall/len(self.train_loader))
-            # Validation
+            # ----- Validation
             print("Validating...")
             with torch.no_grad():
                 val_epoch_loss = 0
