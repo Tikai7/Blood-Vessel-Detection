@@ -9,7 +9,7 @@ class Tester():
     """A class to represent the testing process for the U-Net model for vessel segmentation.
     """
 
-    def __init__(self, state="params/local_model_EN_b3_BD_adamW_weight_augmented_3D_3C_100epochs") -> None:
+    def __init__(self, state="res/model_params/model_EN_b3_BD_adamW_weight_augmented_3D_3C_100epochs") -> None:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.state = torch.load(state)
         encoder_name = 'efficientnet-b3'
@@ -56,35 +56,55 @@ class Tester():
         mask_image_transposed = np.transpose(masked_image, (1, 2, 0))
         return mask, mask_image_transposed
     
-    def predict_loader(self, loader, max_images=5):
+    def predict_loader(self, loader, max_images=5, has_target=True):
         """Method to predict the mask for the input data loader.
         @param loader, The input data loader.
         """
-        for i, (image, mask) in enumerate(loader):
+        for i, batch in enumerate(loader):
+            
+            if has_target:
+                image, real_mask = batch
+            else:
+                image = batch
+
             image = image.to(self.device)
+            
             mask = self.model(image)        
             mask = mask.squeeze(0)
             mask = mask.detach().cpu().numpy()
             mask = self.binarize(mask)
+
             image = image.squeeze(0)
             image = image.detach().cpu().numpy()
             masked_image = image*mask
+
+            if has_target:
+                real_mask = real_mask.squeeze(0)
+                real_mask = real_mask.detach().cpu().numpy()
+                real_mask = self.binarize(real_mask)
+                real_mask = np.transpose(real_mask[0], (1, 2, 0))
 
             image_transposed = np.transpose(image[0], (1, 2, 0))
             mask_transposed = np.transpose(mask[0], (1, 2, 0))
             masked_image = np.transpose(masked_image[0], (1, 2, 0))
 
+            nb_subplots = 4 if has_target else 3   
+
             if i < max_images:
                 plt.figure(figsize=(15,10))
-                plt.subplot(1, 3, 1)
+                plt.subplot(1, nb_subplots, 1)
                 plt.imshow(image_transposed)
                 plt.title("Input Image")
-                plt.subplot(1, 3, 2)
+                plt.subplot(1, nb_subplots, 2)
+                plt.imshow(real_mask)
+                plt.title("Real Mask")
+                plt.subplot(1, nb_subplots, 3)
                 plt.imshow(mask_transposed)
                 plt.title("Predicted Mask")
-                plt.subplot(1, 3, 3)
-                plt.imshow(masked_image)
-                plt.title("Masked Image")
+                if has_target:
+                    plt.subplot(1, nb_subplots, 4)
+                    plt.imshow(masked_image)
+                    plt.title("Masked Image")
                 plt.show()
             else:
                 break

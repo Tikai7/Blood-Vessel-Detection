@@ -18,7 +18,7 @@ class DataLoaderManager(Dataset):
     def __init__(self, root_dir, kidney_dir=False, data_augmentation=False, shape=(64,64)) -> None:
         self.SHAPE = shape
         self.root_dir = root_dir
-        self.kidney_dir = "dataset/archive"
+        self.kidney_dir = "dataset"
         self.data_augmentation = data_augmentation
 
         if kidney_dir:

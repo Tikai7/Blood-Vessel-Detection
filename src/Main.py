@@ -51,8 +51,13 @@ train_loss, val_loss, precision, recall, val_p, val_r = trainer.set_model(model)
     .set_loss_fn(loss)\
     .set_optimizer(optimizer)\
     .fit(learning_rate, epochs, 1/pos_weight)
+
+# ------------------------------ MODEL SAVING ------------------------------
+suffix = "model_ENB3_BCE_DICE_balanced_augmented_3D"
+model_path = f"../res/model_params/{suffix}"
+history_path = f"../res/model_metrics/{suffix}"
+trainer.save(model_path, history_path)
 # ------------------------------ PLOTTING ------------------------------
 trainer.plot_loss(train_loss, val_loss)
 trainer.plot_precision_recall(precision, recall, val_p, val_r)
 trainer.evaluate()
-trainer.save(path="params/local_model_EN_b3_BD_adamW_weight_augmented_3D_3C_100epochs")

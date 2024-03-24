@@ -28,7 +28,9 @@ class Trainer:
             },
             "params": {
                 "learning_rate": None,
-                "pos_weight": None
+                "pos_weight": None,
+                "weight_decay": None,
+                "epochs": None
             }
         }
 
@@ -73,8 +75,8 @@ class Trainer:
         """
         plt.style.use('ggplot')
         plt.figure(figsize=(12,7))
-        plt.plot(precision, label='precision')
-        plt.plot(recall, label='recall')
+        plt.plot(precision, label='train precision')
+        plt.plot(recall, label='train recall')
         plt.plot(val_precision, label='val precision')
         plt.plot(val_recall, label='val recall')
         plt.xlabel('Epochs')
@@ -196,6 +198,8 @@ class Trainer:
         
         self.history["params"]["learning_rate"] = learning_rate
         self.history["params"]["pos_weight"] = pos_weight
+        self.history["params"]["weight_decay"] = weight_decay
+        self.history["params"]["epochs"] = epochs
 
         val_accuracy, train_accuracy = [], []
         val_loss, train_loss = [], []
@@ -263,8 +267,8 @@ class Trainer:
         
         self.history["training"]["accuracy"] = train_accuracy
         self.history["training"]["loss"] = train_loss
-        self.history["training"]["precision"] = precision
-        self.history["training"]["recall"] = recall
+        self.history["training"]["precision"] = train_precision
+        self.history["training"]["recall"] = train_recall
         self.history["validation"]["accuracy"] = val_accuracy
         self.history["validation"]["loss"] = val_loss
         self.history["validation"]["precision"] = val_precision

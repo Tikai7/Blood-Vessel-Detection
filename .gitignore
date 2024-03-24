@@ -1,5 +1,6 @@
 /__pycache__
-/dataset
+/data
+/images
 /patches
-/params
+/res/model_params
 __pycache__

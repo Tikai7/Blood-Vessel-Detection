@@ -46,7 +46,7 @@ class Masker:
         filtered_filenames = list(filter(lambda x: x in unmask_filenames, mask_filenames))
         for filename in filtered_filenames:
             image = cv2.imread(self.unmask_dir + '/' + cluster + '/' + filename)
-            cv2.imwrite(f"C:/Cours Sorbonne/S2/PLDAC/Projet/dataset/archive/img/{filename}",image)
+            cv2.imwrite(f"C:/Cours Sorbonne/S2/PLDAC/Projet/dataset/img/{filename}",image)
 
     
     def build_mask(self):
