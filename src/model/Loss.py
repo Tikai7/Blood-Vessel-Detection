@@ -22,15 +22,15 @@ class Loss():
         loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         return loss(y_pred,  y_true)
 
-    # twersky et FOCAL LOSS
     @staticmethod
     def focal_loss(y_pred, y_true, pos_weight=None):
         """Method to compute the Focal loss between the predicted and true labels.
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        focal_loss = smp.losses.FocalLoss(alpha = pos_weight,gamma=4,mode='binary')
-        return focal_loss(y_pred,y_true,pos_weight)
+        pos_weight = torch.tensor([pos_weight]).to(y_true.device) if pos_weight else None
+        focal_loss = smp.losses.FocalLoss(alpha=pos_weight, gamma=4, mode='binary')
+        return focal_loss(y_pred,y_true)
     
     @staticmethod
     def tversky_loss(y_pred, y_true, pos_weight=None):
@@ -38,11 +38,12 @@ class Loss():
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        tversky_loss = smp.losses.TverskyLoss(pos_weight, 1-pos_weight,mode='binary')
-        return tversky_loss(y_pred,y_true,pos_weight)
+        pos_weight = torch.tensor([pos_weight]).to(y_true.device) if pos_weight else None
+        tversky_loss = smp.losses.TverskyLoss(alpha=pos_weight, beta=1/pos_weight, mode='binary')
+        return tversky_loss(y_pred,y_true)
         
     @staticmethod
-    def dice_loss(y_pred, y_true, pos_weight=None):
+    def dice_loss(y_pred, y_true):
         """Method to compute the Dice loss between the predicted and true labels.
         The method uses the sigmoid function to convert the predicted labels to probabilities.
         @param y_pred : torch.Tensor, The predicted labels.
@@ -68,9 +69,9 @@ class Loss():
         return 0.5*(Loss.focal_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true))
     
     @staticmethod
-    def combined_tversky_loss(y_pred, y_true, pos_weight=None):
+    def combined_tversky_bce_loss(y_pred, y_true, pos_weight=None):
         """Method to compute the combined loss, which is the sum of the binary cross-entropy loss and the Dice loss.
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        return 0.5*(Loss.tversky_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true))
+        return 0.5*(Loss.tversky_loss(y_pred, y_true, pos_weight) + Loss.bce_loss(y_pred, y_true, pos_weight))

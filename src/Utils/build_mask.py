@@ -11,8 +11,12 @@ class Masker:
         self.unmask_dir = "patches/patches_bvd_clustd"
         self.json_dir = "patches/patches_bvd_clustd_json"
         self.mask_dir = "patches/patches_bvd_clustd_mask"
+
+        self.json_test_dir = "patches/patches_test/patches_anno_medecin_bvd_json"
+        self.mask_test_dir = "patches/patches_test/patches_anno_medecin_bvd_mask"
+        self.unmask_test_dir = "patches/patches_test/patches_anno_medecin_bvd"
         
-    def gen_mask_img(self, json_filename, original_img_filename, mask_img_filename):
+    def gen_mask_img(self, json_filename, original_img_filename, mask_img_filename, write_dir=None):
         """ Generate a mask image from a json file and an original image.
         @param json_filename: The json filename.
         @param original_img_filename: The original image filename.
@@ -25,6 +29,8 @@ class Masker:
         data = json.loads(data)
         # read the original image
         image = cv2.imread(original_img_filename)
+        if write_dir is not None:
+            cv2.imwrite(write_dir, image)
         # create a mask
         mask = np.zeros_like(image, shape=(image.shape[0],image.shape[1]), dtype=np.uint8)
         # for all the shapes in the json file
@@ -70,8 +76,25 @@ class Masker:
                 json_filename = json_clustered_dir + '/' + json_filename
                 self.gen_mask_img(json_filename, original_img_filename, mask_img_filename)
 
+
+    def build_test_dataset(self):  
+        json_dir = os.listdir(self.json_test_dir)
+        for json_filename in json_dir:
+            print(f"Processing {json_filename}")
+            # get the original image filename
+            cluster_of_json = json_filename.split("_")[2].split('.')[0]+'_clustd'
+            mask_img_filename = self.mask_test_dir + '/' + json_filename.replace('.json', '.png')
+            original_img_filename = self.unmask_dir + '/' + cluster_of_json + '/' + json_filename.replace('.json', '.png')
+            original_img_filename_to_write = self.unmask_test_dir + '/' + json_filename.replace('.json', '.png')
+            json_filename = self.json_test_dir + '/' + json_filename
+            self.gen_mask_img(json_filename, original_img_filename, mask_img_filename, write_dir=original_img_filename_to_write)
+
+                
+
+
 masker = Masker()
 masker.build_mask()
 masker.match_image_to_mask(cluster="001B_clustd")
 masker.match_image_to_mask(cluster="0024B_clustd")
 masker.match_image_to_mask(cluster="003DEF_clustd")
+masker.build_test_dataset()

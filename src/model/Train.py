@@ -113,6 +113,14 @@ class Trainer:
         pos_weight = n_negative/n_positive
         return pos_weight
 
+    def calculate_proba(self, dataloader):
+        n_negative = 0
+        n_positive = 0
+        for _, mask in dataloader:
+            n_negative += (mask == 0).sum().item()
+            n_positive += (mask == 1).sum().item()
+        pos_proba = n_positive/(n_positive+n_negative)
+        return pos_proba
 
     def calculate_accuracy(self, y_true, y_pred): 
         """Calculate the accuracy of the model.
@@ -123,6 +131,7 @@ class Trainer:
         accuracy = (y_pred_bin == y_true).sum().item() / (y_true.shape[0] * y_true.shape[1] * y_true.shape[2] * y_true.shape[3])
         return accuracy
     
+
     def calculate_precision_recall(self, y_true, y_pred):
         """Calculate precision and recall.
         @param y_true : torch.Tensor, The ground truth binary masks.

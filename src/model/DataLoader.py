@@ -15,17 +15,24 @@ class DataLoaderManager(Dataset):
     - The class contains a static method to build a data loader from the input data.
     """
 
-    def __init__(self, root_dir, kidney_dir=False, data_augmentation=False, shape=(64,64)) -> None:
+    def __init__(self, root_dir, test_dir=None, kidney_dir=None, data_augmentation=False, shape=(64,64), test_set=False) -> None:
         self.SHAPE = shape
         self.root_dir = root_dir
-        self.kidney_dir = "dataset"
+        self.kidney_dir = kidney_dir
+        self.test_filenames = os.listdir(test_dir) if test_dir else []
         self.data_augmentation = data_augmentation
 
-        if kidney_dir:
+        if self.kidney_dir is not None:
             self.image_folder = os.path.join(self.kidney_dir, 'img')
             self.mask_folder = os.path.join(self.kidney_dir, 'mask')
-            self.mask_filenames = os.listdir(self.image_folder)
-            self.image_filenames = os.listdir(self.mask_folder)
+            self.mask_filenames = os.listdir(self.mask_folder)
+            self.image_filenames = os.listdir(self.image_folder)
+        elif test_set:
+            self.image_folder = os.path.join(root_dir, 'patches_anno_medecin_bvd')
+            self.mask_folder = os.path.join(root_dir, 'patches_anno_medecin_bvd_mask')
+            self.image_filenames =  os.listdir(self.image_folder)  
+            self.image_filenames = [filename for filename in self.image_filenames if 'json' not in filename]
+            self.mask_filenames =  os.listdir(self.mask_folder)
         else:
             self.image_folder = os.path.join(root_dir, 'patches_bvd_clustd')
             self.mask_folder = os.path.join(root_dir, 'patches_bvd_clustd_mask')
@@ -39,7 +46,6 @@ class DataLoaderManager(Dataset):
         self.transform = transforms.Compose([
             self.same_transform,
             transforms.Normalize(mean=[0.5], std=[0.5]),
-            # transforms.Lambda(self.minmax),
         ])
         self.target_transform = transforms.Compose([
             self.same_transform,
@@ -52,12 +58,12 @@ class DataLoaderManager(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.image_folder, self.image_filenames[idx])
         mask_name = os.path.join(self.mask_folder, self.mask_filenames[idx])
+
         try:
             image = Image.open(img_name)
             mask = Image.open(mask_name).convert('L')
         except:
             return self.__getitem__(idx + 1)  
-
 
         if self.data_augmentation:
             image, mask = self.data_augmentation_transform(image, mask)
@@ -102,6 +108,10 @@ class DataLoaderManager(Dataset):
             filenames.extend(files)
         if mask_filenames:
             filenames = [filename for filename in filenames if filename in mask_filenames]
+        else:
+            filenames = [filename for filename in filenames if filename.split('\\')[1] not in self.test_filenames]
+
+        print(f"Number of files : {len(filenames)}")
         return filenames
 
     def show_data(self, X):
