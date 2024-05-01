@@ -53,7 +53,7 @@ class Loss():
         return dice_loss(y_pred,y_true)
 
     @staticmethod
-    def combined_bce_loss(y_pred, y_true, pos_weight=None):
+    def combined_bce_loss(y_pred, y_true, pos_proba=None, pos_weight=None):
         """Method to compute the combined loss, which is the sum of the binary cross-entropy loss and the Dice loss.
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
@@ -61,15 +61,19 @@ class Loss():
         return 0.5*(Loss.bce_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true))
     
     @staticmethod
-    def combined_focal_loss(y_pred, y_true, pos_weight=None):
+    def combined_focal_loss(y_pred, y_true, pos_proba=None, pos_weight=None):
         """Method to compute the combined loss, which is the sum of the binary cross-entropy loss and the Dice loss.
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.
         """
-        return 0.5*(Loss.focal_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true))
+        return 0.5*(Loss.focal_loss(y_pred, y_true, pos_proba) + Loss.dice_loss(y_pred, y_true))
     
     @staticmethod
-    def combined_tversky_bce_loss(y_pred, y_true, pos_weight=None):
+    def combined_focal_bce_dice_loss(y_pred, y_true, pos_proba=None, pos_weight=None):
+        return (1/3)* (Loss.focal_loss(y_pred, y_true, pos_proba) + Loss.bce_loss(y_pred, y_true, pos_weight) + Loss.dice_loss(y_pred, y_true))
+
+    @staticmethod
+    def combined_tversky_bce_loss(y_pred, y_true, pos_proba=None, pos_weight=None):
         """Method to compute the combined loss, which is the sum of the binary cross-entropy loss and the Dice loss.
         @param y_pred : torch.Tensor, The predicted labels.
         @param y_true : torch.Tensor, The true labels.

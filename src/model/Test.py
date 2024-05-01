@@ -8,11 +8,11 @@ class Tester():
     """A class to represent the testing process for the U-Net model for vessel segmentation.
     """
 
-    def __init__(self, state="res/model_params/model_ENB3_BCE_DICE_balanced_augmented_3D", test_loader=None) -> None:
+    def __init__(self, state="res/model_params/model_ENB3_BCE_DICE_balanced_augmented_3D", test_loader=None, encoder_name='efficientnet-b3') -> None:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.test_loader = test_loader
         self.state = torch.load(state)
-        encoder_name = 'efficientnet-b3'
+        encoder_name = encoder_name
         model = smp.Unet(encoder_name=encoder_name, classes=1, in_channels=3)
         model.load_state_dict(self.state)
         model.eval()

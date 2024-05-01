@@ -196,7 +196,7 @@ class Trainer:
         print("Model saved.")
 
 
-    def fit(self, learning_rate = 1e-4, epochs : int = 100, pos_weight : float = None, weight_decay : float = 0.01):
+    def fit(self, learning_rate = 1e-4, epochs : int = 100, pos_proba : float = None, pos_weight : float = None, weight_decay : float = 0.01):
         """Method to train the model.
         @param learning_rate : float, The learning rate for the optimizer.
         @param epochs : int, The number of epochs for training the model.
@@ -233,7 +233,7 @@ class Trainer:
                     y_pred_accuracy.append(batch_y.cpu())
             
                 self.optimizer.zero_grad()
-                loss = self.loss_fn(y_pred, batch_y, pos_weight)
+                loss = self.loss_fn(y_pred, batch_y, pos_proba, pos_weight)
                 loss.backward()
                 self.optimizer.step()
                 train_epoch_loss += loss.item()
@@ -257,7 +257,7 @@ class Trainer:
                     p, r = self.calculate_precision_recall(batch_y, y_pred)
                     val_p += p
                     val_r += r
-                    loss_val = self.loss_fn(y_pred, batch_y, pos_weight)
+                    loss_val = self.loss_fn(y_pred, batch_y, pos_proba, pos_weight)
                     val_epoch_loss += loss_val.item()
                     y_true_val_accuracy.append(y_pred.detach().cpu())
                     y_pred_val_accuracy.append(batch_y.cpu())
