@@ -104,10 +104,10 @@ class Tester():
                 plt.subplot(1, nb_subplots, 3)
                 plt.imshow(mask_transposed)
                 plt.title("Predicted Mask")
-                if has_target:
-                    plt.subplot(1, nb_subplots, 4)
-                    plt.imshow(masked_image)
-                    plt.title("Masked Image")
+                # if has_target:
+                #     plt.subplot(1, nb_subplots, 4)
+                #     plt.imshow(masked_image)
+                #     plt.title("Masked Image")
                 plt.show()
             else:
                 break
